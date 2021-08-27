@@ -1,0 +1,21 @@
+<launch>
+  <include file="$(find omo_r1_bringup)/launch/includes/description_sparo.launch.xml"/>
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="50.0" />
+    <param name="tf_prefix" value=""/>
+  </node>
+
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
+    <param name="use_gui" value="false"/>
+    <param name="rate" value="50"/>
+  </node>
+
+  <include file="$(find omo_r1_bringup)/launch/omo_r1_motor_dead_reckoning.launch">
+    <arg name="set_odom_mode" value="wheel_only"/>
+  </include>
+   
+  <include file="$(find rplidar_ros)/launch/rplidar_s1.launch"/>
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+   
+</launch>

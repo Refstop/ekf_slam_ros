@@ -22,6 +22,8 @@ ekf_slam::ekf_slam(
     // X(0) += 0.06;
     X_previous = X; // 3+3n*1
     Covariance = P; // 3+3n*1
+    cout<<"X_previous:"<<endl<<X_previous<<endl<<endl;
+    cout<<"Covariance:"<<endl<<Covariance<<endl<<endl;
     this->Z = pose2rphi(Z); //2n*1
 }
 
@@ -31,9 +33,10 @@ ekf_slam::~ekf_slam() {
 
 void ekf_slam::prediction() {
     //prediction step
+    cout<<"asd"<<endl;
     MatrixXf M(U.size(), U.size()), V(3, U.size()), G_low(3,3), G(3, Covariance.rows()), F(X_previous.size(), 3);
     M << pow(0.0005, 2)*MatrixXf::Identity(M.rows(), M.cols()); // M:encoder covariance
-
+    cout<<"M:"<<endl<<M<<endl<<endl;
     float wheel_separation = 0.591; // parameterization, robot's radius
     float d_theta = (U(1)-U(0))/wheel_separation;
     float r = (U(1)+U(0))/2;
@@ -43,19 +46,23 @@ void ekf_slam::prediction() {
     X_previous(1) += dy;
     X_previous(2) += d_theta;
     X_hat = X_previous;
-
+    cout<<"X_hat:"<<endl<<X_hat<<endl<<endl;
+    
     V << 
     0.5*cos(d_theta), 0.5*cos(d_theta),
     0.5*sin(d_theta), 0.5*sin(d_theta),
     1/wheel_separation, 1/wheel_separation;
+
     G_low << 
     1, 0, -r * sin(d_theta),
     0, 1, r * cos(d_theta),
     0, 0, 1;
+
     G << G_low, MatrixXf::Zero(3, X_previous.size()-3), MatrixXf::Zero(X_previous.size()-3, 3), MatrixXf::Identity(X_previous.size()-3, X_previous.size()-3);
     F << MatrixXf::Identity(3, 3), MatrixXf::Zero(3, X_previous.size()-3);
     auto R = V*M*V.transpose();
     S_hat = G*Covariance*G.transpose()+F*R*F.transpose();
+    cout<<"S_hat:"<<endl<<S_hat<<endl<<endl;
 }
 
 void ekf_slam::correction() {

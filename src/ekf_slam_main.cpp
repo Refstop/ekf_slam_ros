@@ -95,6 +95,7 @@ void arucoCallback(const indoor_2d_nav::FiducialTransformArray_i2n::ConstPtr& ms
   }
   cout<<"Z_init:"<<endl<<Z<<endl<<endl;
   cout<<"marker_ids:"<<endl<<marker_ids<<endl<<endl;
+  cout<<"encoder:"<<endl<<encoder<<endl<<endl;
   // Vector3f id_0, id_1;
   // id_0 << 2.978101, 0.073372, 0;
   // id_1 << 2.879017, 0.906098, 0;
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
   ros::NodeHandle nh;
   ros::Subscriber pose_sub = nh.subscribe("pose", 10, poseCallback);
   ros::Subscriber aruco_sub = nh.subscribe("fiducial_transforms", 10, arucoCallback);
-  ros::Subscriber dead_reckoning_sub = nh.subscribe("Dead_reckoning", 10, drCallback);
+  ros::Subscriber dead_reckoning_sub = nh.subscribe("Dead_reckoning", 1, drCallback);
   ros::spin();
   return 0;
 }

@@ -1,0 +1,17 @@
+
+<launch>
+  
+  <!-- Arguments -->
+  <arg name="map_file" default="/home/sparo/data/map/rb_bldg_3rd_edited_edited2.yaml"/>
+  <arg name="open_rviz" default="true"/>
+  <arg name="move_forward_only" default="true"/>
+  <arg name="trans_tol"  default="0.2"/>
+  
+
+  <include file="$(find ekf_slam_ros)/launch/drive.launch"/>  
+  <include file="$(find indoor_2d_nav)/launch/sparo_2d_navigation_omor1.launch"/>  
+  <include file="$(find indoor_2d_nav)/launch/aruco_detect_i2n.launch">
+    <arg name="fiducial_len" value="0.1"/>
+  </include>
+   
+</launch>
