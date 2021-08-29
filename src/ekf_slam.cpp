@@ -7,17 +7,28 @@ ekf_slam::ekf_slam(
     const MatrixXf& U, // robot's movement(meter, encoder output): (d_l, d_r)
     const MatrixXf& marker_ids // ID of detected markers
     ) :U(U), marker_ids(marker_ids) {
-    int max_id = 0;
+    int max_id = 0, add_size = 0;
     for(int i = 0; i < marker_ids.size(); i++) {
         if(max_id < marker_ids(i)) max_id = marker_ids(i);
     }
+    cout<<"max_id:"<<endl<<max_id<<endl<<endl;
     if(max_id > X.size()/3 - 1) {
         MatrixXf X_temp = X, P_temp = P;
         X.resize(3 + 3*(max_id + 1), 1);
         P.resize(3 + 3*(max_id + 1), 3 + 3*(max_id + 1));
-        int add_size = 3*((max_id + 1) - (X_temp.size()/3 - 1));
+        add_size = 3*((max_id + 1) - (X_temp.size()/3 - 1));
+        cout<<"add_size:"<<endl<<add_size<<endl<<endl;
         X << X_temp, MatrixXf::Zero(add_size, 1);
-        P << P_temp, MatrixXf::Zero(add_size, 3), MatrixXf::Zero(3, add_size), 100*MatrixXf::Identity(add_size, add_size);
+        P << P_temp, MatrixXf::Zero(3, add_size), MatrixXf::Zero(add_size, 3), 100*MatrixXf::Identity(add_size, add_size);
+    }
+    cout<<"X:"<<endl<<X<<endl<<endl;
+    cout<<"P:"<<endl<<P<<endl<<endl;
+    for(int i = 0; i < add_size; i++) {
+        if(X(3*(marker_ids(i)+1)) == 0 && X(3*(marker_ids(i)+1)+1) == 0 && X(3*(marker_ids(i)+1)+2) == 0) {
+            X(3*(marker_ids(i)+1)) = Z(3*i);
+            X(3*(marker_ids(i)+1)+1) = Z(3*i+1);
+            X(3*(marker_ids(i)+1)+2) = Z(3*i+2);
+        } 
     }
     // X(0) += 0.06;
     X_previous = X; // 3+3n*1
@@ -33,10 +44,8 @@ ekf_slam::~ekf_slam() {
 
 void ekf_slam::prediction() {
     //prediction step
-    cout<<"asd"<<endl;
-    MatrixXf M(U.size(), U.size()), V(3, U.size()), G_low(3,3), G(3, Covariance.rows()), F(X_previous.size(), 3);
+    MatrixXf M(U.size(), U.size()), V(3, U.size()), G_low(3,3), G(X_previous.size(), X_previous.size()), F(X_previous.size(), 3);
     M << pow(0.0005, 2)*MatrixXf::Identity(M.rows(), M.cols()); // M:encoder covariance
-    cout<<"M:"<<endl<<M<<endl<<endl;
     float wheel_separation = 0.591; // parameterization, robot's radius
     float d_theta = (U(1)-U(0))/wheel_separation;
     float r = (U(1)+U(0))/2;
@@ -51,15 +60,19 @@ void ekf_slam::prediction() {
     V << 
     0.5*cos(d_theta), 0.5*cos(d_theta),
     0.5*sin(d_theta), 0.5*sin(d_theta),
-    1/wheel_separation, 1/wheel_separation;
+    1/wheel_separation, -1/wheel_separation;
 
     G_low << 
     1, 0, -r * sin(d_theta),
     0, 1, r * cos(d_theta),
     0, 0, 1;
 
+    cout<<"V:"<<endl<<V<<endl<<endl;
+    cout<<"G_low:"<<endl<<G_low<<endl<<endl;
     G << G_low, MatrixXf::Zero(3, X_previous.size()-3), MatrixXf::Zero(X_previous.size()-3, 3), MatrixXf::Identity(X_previous.size()-3, X_previous.size()-3);
-    F << MatrixXf::Identity(3, 3), MatrixXf::Zero(3, X_previous.size()-3);
+    F << MatrixXf::Identity(3, 3), MatrixXf::Zero(X_previous.size()-3, 3);
+    cout<<"G:"<<endl<<G<<endl<<endl;
+    cout<<"F:"<<endl<<F<<endl<<endl;
     auto R = V*M*V.transpose();
     S_hat = G*Covariance*G.transpose()+F*R*F.transpose();
     cout<<"S_hat:"<<endl<<S_hat<<endl<<endl;
@@ -75,9 +88,6 @@ void ekf_slam::correction() {
         delta(3*i) = X_hat(3*(marker_ids(i)+1)) - X_hat(0);
         delta(3*i+1) = X_hat(3*(marker_ids(i)+1)+1) - X_hat(1);
         delta(3*i+2) = X_hat(3*(marker_ids(i)+1)+2) - X_hat(2);
-        // for(int j = 0; j < 3; j++) {
-        //     delta(3*i+j) = X_hat(3*(marker_ids(i)+1)+j) - X_hat(j); // 2n*1, (dx1, dy1, dphi1, dx2, dy2, dphi2, dx3, dy3, dphi3, ...)
-        // }
     }
 
     // Z_hat
@@ -140,7 +150,6 @@ void ekf_slam::correction() {
     cout<<"S_current:"<<endl<<S_current<<endl<<endl;
 
     // X_current(0) -= 0.06;
-    ROS_INFO("result: %f, %f, %f\n", X_current(0), X_current(1), X_current(2));
     delete q;
 }
 
