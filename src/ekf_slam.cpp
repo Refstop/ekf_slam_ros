@@ -13,9 +13,9 @@ ekf_slam::ekf_slam(
     }
     if(max_id > X.size()/3 - 1) {
         MatrixXf X_temp = X, P_temp = P;
-        X.resize(3 + 3*max_id, 1);
-        P.resize(3 + 3*max_id, 3 + 3*max_id);
-        int add_size = 3*(max_id - (X_temp.size()/3 - 1));
+        X.resize(3 + 3*(max_id + 1), 1);
+        P.resize(3 + 3*(max_id + 1), 3 + 3*(max_id + 1));
+        int add_size = 3*((max_id + 1) - (X_temp.size()/3 - 1));
         X << X_temp, MatrixXf::Zero(add_size, 1);
         P << P_temp, MatrixXf::Zero(add_size, 3), MatrixXf::Zero(3, add_size), 100*MatrixXf::Identity(add_size, add_size);
     }
