@@ -11,24 +11,22 @@ ekf_slam::ekf_slam(
     for(int i = 0; i < marker_ids.size(); i++) {
         if(max_id < marker_ids(i)) max_id = marker_ids(i);
     }
-    cout<<"max_id:"<<endl<<max_id<<endl<<endl;
     if(max_id > X.size()/3 - 1) {
         MatrixXf X_temp = X, P_temp = P;
         X.resize(3 + 3*(max_id + 1), 1);
         P.resize(3 + 3*(max_id + 1), 3 + 3*(max_id + 1));
-        add_size = 3*((max_id + 1) - (X_temp.size()/3 - 1));
-        cout<<"add_size:"<<endl<<add_size<<endl<<endl;
-        X << X_temp, MatrixXf::Zero(add_size, 1);
-        P << P_temp, MatrixXf::Zero(3, add_size), MatrixXf::Zero(add_size, 3), 100*MatrixXf::Identity(add_size, add_size);
+        add_size = (max_id + 1) - (X_temp.size()/3 - 1);
+        X << X_temp, MatrixXf::Zero(3*add_size, 1);
+        P << P_temp, MatrixXf::Zero(3, 3*add_size), MatrixXf::Zero(3*add_size, 3), 100*MatrixXf::Identity(3*add_size, 3*add_size);
     }
-    cout<<"X:"<<endl<<X<<endl<<endl;
-    cout<<"P:"<<endl<<P<<endl<<endl;
+    int landmark_n = 0;
     for(int i = 0; i < add_size; i++) {
-        if(X(3*(marker_ids(i)+1)) == 0 && X(3*(marker_ids(i)+1)+1) == 0 && X(3*(marker_ids(i)+1)+2) == 0) {
-            X(3*(marker_ids(i)+1)) = Z(3*i);
-            X(3*(marker_ids(i)+1)+1) = Z(3*i+1);
-            X(3*(marker_ids(i)+1)+2) = Z(3*i+2);
-        } 
+        landmark_n = 3*(marker_ids(i)+1);
+        if(X(landmark_n) == 0 && X(landmark_n+1) == 0 && X(landmark_n+2) == 0) {
+            X(landmark_n) = Z(3*i);
+            X(landmark_n+1) = Z(3*i+1);
+            X(landmark_n+2) = Z(3*i+2);
+        }
     }
     // X(0) += 0.06;
     X_previous = X; // 3+3n*1
@@ -39,7 +37,7 @@ ekf_slam::ekf_slam(
 }
 
 ekf_slam::~ekf_slam() {
-    ROS_INFO("slam Complete.");
+    ROS_INFO("Slam Complete.");
 }
 
 void ekf_slam::prediction() {
