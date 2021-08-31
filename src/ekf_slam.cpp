@@ -7,26 +7,33 @@ ekf_slam::ekf_slam(
     const MatrixXf& U, // robot's movement(meter, encoder output): (d_l, d_r)
     const MatrixXf& marker_ids // ID of detected markers
     ) :U(U), marker_ids(marker_ids) {
-    int max_id = 0, add_size = 0;
+    int max_id = 0, landmark_size = 0;
     for(int i = 0; i < marker_ids.size(); i++) {
         if(max_id < marker_ids(i)) max_id = marker_ids(i);
     }
-    if(max_id > X.size()/3 - 1) {
+    landmark_size = max_id + 1;
+    cout<<"X:"<<endl<<X<<endl<<endl;
+    if(landmark_size > X.size()/3 - 1) {
+        cout<<"landmark_size:"<<endl<<landmark_size<<endl<<endl;
+        cout<<"X.size()/3 - 1:"<<endl<<X.size()/3 - 1<<endl<<endl;
         MatrixXf X_temp = X, P_temp = P;
-        X.resize(3 + 3*(max_id + 1), 1);
-        P.resize(3 + 3*(max_id + 1), 3 + 3*(max_id + 1));
-        add_size = (max_id + 1) - (X_temp.size()/3 - 1);
+        X.resize(3 + 3*landmark_size, 1);
+        P.resize(3 + 3*landmark_size, 3 + 3*landmark_size);
+        int add_size = landmark_size - (X_temp.size()/3 - 1);
         X << X_temp, MatrixXf::Zero(3*add_size, 1);
         P << P_temp, MatrixXf::Zero(3, 3*add_size), MatrixXf::Zero(3*add_size, 3), 100*MatrixXf::Identity(3*add_size, 3*add_size);
     }
     int landmark_n = 0;
-    for(int i = 0; i < add_size; i++) {
+    
+    for(int i = 0; i < marker_ids.size(); i++) {
         landmark_n = 3*(marker_ids(i)+1);
+        cout<<"landmark_n:"<<endl<<landmark_n<<endl<<endl;
         if(X(landmark_n) == 0 && X(landmark_n+1) == 0 && X(landmark_n+2) == 0) {
             X(landmark_n) = Z(3*i);
             X(landmark_n+1) = Z(3*i+1);
             X(landmark_n+2) = Z(3*i+2);
         }
+        
     }
     // X(0) += 0.06;
     X_previous = X; // 3+3n*1
@@ -43,7 +50,7 @@ ekf_slam::~ekf_slam() {
 void ekf_slam::prediction() {
     //prediction step
     MatrixXf M(U.size(), U.size()), V(3, U.size()), G_low(3,3), G(X_previous.size(), X_previous.size()), F(X_previous.size(), 3);
-    M << pow(0.0005, 2)*MatrixXf::Identity(M.rows(), M.cols()); // M:encoder covariance
+    M << 0.05*MatrixXf::Identity(M.rows(), M.cols()); // M:encoder covariance
     float wheel_separation = 0.591; // parameterization, robot's radius
     float d_theta = (U(1)-U(0))/wheel_separation;
     float r = (U(1)+U(0))/2;
@@ -52,6 +59,7 @@ void ekf_slam::prediction() {
     X_previous(0) += dx;
     X_previous(1) += dy;
     X_previous(2) += d_theta;
+    cout<<"dx, dy, d_theta:"<<endl<<dx<<dy<<d_theta<<endl<<endl;
     X_hat = X_previous;
     cout<<"X_hat:"<<endl<<X_hat<<endl<<endl;
     

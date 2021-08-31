@@ -5,7 +5,7 @@ typedef struct observation {
   Vector3f point;
 } obsv;
 
-MatrixXf X, P;
+MatrixXf X(1,1), P(1,1);
 Vector2f encoder(2,1);
 obsv* sorted;
 
@@ -55,6 +55,7 @@ void obsv_sort(obsv obsv_arr[], int detected_count) {
 
 // subscribe robot's pose from topic "/pose" (x, y, phi)
 void poseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg) { //map-base_footprint
+  if(X.size() != 1) return;
   // X << msg->pose.pose.position.x, msg->pose.pose.position.y,
   // 2*atan2(msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
   // P << 
@@ -63,6 +64,7 @@ void poseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
   // 0, 0, msg->pose.covariance[35];
   
   // hardcode
+  cout<<"pose set"<<endl;
   X.resize(3,1);
   P.resize(3,3);
   X << 0, 0, 0;
