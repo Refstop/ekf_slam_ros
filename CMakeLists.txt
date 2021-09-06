@@ -8,7 +8,6 @@ project(ekf_slam_ros)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  fiducial_msgs
   geometry_msgs
   indoor_2d_nav
   message_generation
@@ -120,7 +119,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp sensor_msgs rospy tf fiducial_msgs message_runtime message_filters
+  CATKIN_DEPENDS roscpp sensor_msgs rospy tf message_runtime message_filters
 )
 
 ###########
