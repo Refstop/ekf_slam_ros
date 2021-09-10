@@ -18,6 +18,7 @@ using namespace message_filters;
 typedef struct observation {
     int marker_id;
     Vector3f point;
+    float image_error;
 } obsv;
 
 class ekf_slam {
@@ -29,6 +30,7 @@ public:
     void poseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
     void arucoCallback(const indoor_2d_nav::FiducialTransformArray_i2n::ConstPtr& msg);
     void encoderCallback(const ekf_slam_ros::Dead_reckoning::ConstPtr& msg);
+
 private:
     /*
         X: robot's pose(map-base_footprint): (x, y, phi)
@@ -37,17 +39,17 @@ private:
         U: robot's movement(meter, encoder output): (d_l, d_r)
         marker_ids: ID of detected markers
     */
-    MatrixXf X_previous, Covariance, X_hat, S_hat, X_current, S_current, Z, U, marker_ids;
-    Vector2f encoder;
+    MatrixXf X_hat, S_hat, observations, marker_ids;
+    Vector2f U, image_error;
     obsv* sorted;
-    MatrixXf pose2rphi(const MatrixXf& pose);
     ros::NodeHandle nh;
     ros::Subscriber pose_sub;
     ros::Subscriber aruco_sub;
     ros::Subscriber encoder_sub;
     ros::Publisher result_pub;
+    void init_landmark();
+    void publish_result(const MatrixXf& X);
     void merge(obsv list[], int left, int mid, int right);
     void merge_sort(obsv list[], int left, int right);
     void obsv_sort(obsv obsv_arr[], int detected_count);
-    void init_landmark();
 };
