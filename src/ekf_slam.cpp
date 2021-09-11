@@ -15,14 +15,14 @@ ekf_slam::~ekf_slam() {
 
 void ekf_slam::prediction() {
     //prediction step
-    MatrixXf M(U.size(), U.size()), V(3, U.size()), G_low(3,3), G(X_hat.size(), X_hat.size()), F(X_hat.size(), 3);
-    M << 0.05*MatrixXf::Identity(M.rows(), M.cols()); // M:encoder covariance
+    MatrixXf encoder_cov(U.size(), U.size()), V(3, U.size()), G_low(3,3), G(X_hat.size(), X_hat.size()), F(X_hat.size(), 3);
+    encoder_cov << 0.05*MatrixXf::Identity(encoder_cov.rows(), encoder_cov.cols()); // encoder covariance
     
     float wheel_separation = 0.591; // parameterization, robot's radius
     float d_theta = (U(1)-U(0))/wheel_separation;
     float r = (U(1)+U(0))/2;
-    float dx = r * cos(d_theta);
-    float dy = r * sin(d_theta);
+    float dx = r*cos(d_theta);
+    float dy = r*sin(d_theta);
     cout<<"U:"<<endl<<U<<endl<<endl;
     X_hat(0) += dx;
     X_hat(1) += dy;
@@ -35,8 +35,8 @@ void ekf_slam::prediction() {
     1/wheel_separation, -1/wheel_separation;
 
     G_low << 
-    1, 0, -r * sin(d_theta),
-    0, 1, r * cos(d_theta),
+    1, 0, -r*sin(d_theta),
+    0, 1, r*cos(d_theta),
     0, 0, 1;
 
     cout<<"V:"<<endl<<V<<endl<<endl;
@@ -45,7 +45,7 @@ void ekf_slam::prediction() {
     F << MatrixXf::Identity(3, 3), MatrixXf::Zero(X_hat.size()-3, 3);
     cout<<"G:"<<endl<<G<<endl<<endl;
     cout<<"F:"<<endl<<F<<endl<<endl;
-    auto R = V*M*V.transpose();
+    auto R = V*encoder_cov*V.transpose();
     S_hat = G*S_hat*G.transpose()+F*R*F.transpose();
     cout<<"S_hat:"<<endl<<S_hat<<endl<<endl;
 }
@@ -136,9 +136,10 @@ void ekf_slam::arucoCallback(const indoor_2d_nav::FiducialTransformArray_i2n::Co
     auto observed_markers = msg->transforms;
     int detected_count = msg->detected_count;
     obsv* obsv_arr = new obsv[detected_count];
-    marker_ids.resize(detected_count, 1);
     observations.resize(3*detected_count, 1);
-    
+    marker_ids.resize(detected_count);
+    image_error.resize(detected_count);
+    cout<<"before sort"<<endl;
     for(int i = 0; i < detected_count; i++) {
         obsv_arr[i].point <<
         observed_markers[i].transform.translation.z, -observed_markers[i].transform.translation.x,
@@ -146,7 +147,9 @@ void ekf_slam::arucoCallback(const indoor_2d_nav::FiducialTransformArray_i2n::Co
         obsv_arr[i].marker_id = observed_markers[i].fiducial_id;
         obsv_arr[i].image_error = observed_markers[i].image_error;
     }
+    cout<<"after sort1"<<endl;
     obsv_sort(obsv_arr, detected_count);
+    cout<<"after sort2"<<endl;
     for(int i = 0; i < detected_count; i++) {
         observations(3*i) = obsv_arr[i].point(0);
         observations(3*i+1) = obsv_arr[i].point(1);

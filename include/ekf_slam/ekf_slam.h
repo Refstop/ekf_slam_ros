@@ -35,12 +35,13 @@ private:
     /*
         X: robot's pose(map-base_footprint): (x, y, phi)
         P: robot's covariance: diag(Px, Py, Pphi)
-        Z: robot's observation(camera-marker): (x1, y1, phi1, x2, y2, phi2, x3, y3, phi3, ...)
+        observations: robot's observation(camera-marker): (x1, y1, phi1, x2, y2, phi2, x3, y3, phi3, ...)
         U: robot's movement(meter, encoder output): (d_l, d_r)
         marker_ids: ID of detected markers
     */
-    MatrixXf X_hat, S_hat, observations, marker_ids;
-    Vector2f U, image_error;
+    MatrixXf X_hat, S_hat, observations;
+    Vector2f U;
+    VectorXf marker_ids, image_error;
     obsv* sorted;
     ros::NodeHandle nh;
     ros::Subscriber pose_sub;

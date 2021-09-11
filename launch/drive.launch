@@ -11,11 +11,13 @@
     <param name="rate" value="50"/>
   </node>
 
-  <include file="$(find omo_r1_bringup)/launch/omo_r1_motor_dead_reckoning.launch">
+  <include file="$(find omo_r1_bringup)/launch/omo_r1_motor.launch">
     <arg name="set_odom_mode" value="wheel_only"/>
+    <arg name="set_enc_isPub" default="True"/>
   </include>
    
-  <include file="$(find rplidar_ros)/launch/rplidar_s1.launch"/>
+  <!--include file="$(find rplidar_ros)/launch/rplidar_s1.launch"/-->
+  <include file="$(find sick_scan)/launch/sick_tim_5xx.launch"/>
   <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
    
 </launch>
